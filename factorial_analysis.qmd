@@ -125,6 +125,7 @@ library(tidyr)       # data reshaping
 library(dplyr)       # data manipulation
 library(gridExtra)   # combining multiple plots
 
+
 options(digits = 5)
 ```
 
@@ -172,6 +173,9 @@ if (file.exists(pmat_path)) {
   saveRDS(poly_mat, pmat_path)
   cat("Polychoric matrix saved to", pmat_path, "\n")
 }
+
+trait_names <- c("Extraversion", "Neuroticism", "Agreeableness",
+                 "Conscientiousness", "Openness")
 ```
 
 # Factor Analysis
@@ -452,11 +456,9 @@ trait. However, since our data have been specifically designed to
 estimate the Big 5 model, we will stick to a five factor model here.
 
 ```{r}
-# Plot the weights of the 50 items on the 5 personality traits as a heatmap.
+# Plot the loadings of the 50 items on the 5 personality traits as a heatmap.
 # NOTE: The factor order below is inferred by inspecting which group of items
 # loads most strongly on each factor (see the loading heatmap).
-trait_names <- c("Extraversion", "Neuroticism", "Agreeableness",
-                 "Conscientiousness", "Openness")
 
 data_fa  <- data_fa[, c(2,1,3,5,4)]
 fa_result$loadings <- fa_result$loadings[, c(2,1,3,5,4)]
@@ -547,7 +549,7 @@ p3 <- pheatmap(diff_ml,    color = coolwarm, breaks = breaks_full,
 grid.arrange(p1$gtable, p2$gtable, p3$gtable, ncol = 3,
              widths = c(1, 1, 1))
 
-cat("Difference between the weights of the ML method and the ULS method:\n")
+cat("Difference between the loadings of the ML method and the ULS method:\n")
 diff_ml
 ```
 
@@ -606,15 +608,20 @@ rotation method does not have a strong influence on the results.
 # scores="tenBerge" to preserve correlation
 fa_obli      <- fa(poly_mat, nfactors = 5, rotate = "oblimin", fm = "minres", n.obs = nrow(data_mat), scores="tenBerge")
 data_fa_obli <- as.data.frame(factor.scores(data_mat, fa_obli)$scores)
+# From our (not shown) observations, factors are ordered as follows:
+colnames(data_fa_obli) <- trait_names
+```
+
+```{r}
+#| warning: false
+#| fig-height: 4
+#| fig-width: 15
 
 # Exchange column to properly match with traits
 data_fa_obli  <- data_fa_obli[, c(1, 2, 3, 5, 4)]
 fa_obli$loadings <- fa_obli$loadings[, c(1, 2, 3, 5, 4)]
 
 loadings_obli  <- as.matrix(fa_obli$loadings)
-
-# From our (not shown) observations, factors are ordered as follows:
-colnames(data_fa_obli) <- trait_names
 
 weights_obli <- t(loadings_obli)
 rownames(weights_obli) <- trait_names
@@ -637,7 +644,7 @@ p_diff <- pheatmap(diff_obli,   color = coolwarm, breaks = breaks_full,
 grid.arrange(p_obli$gtable, p_vari$gtable, p_diff$gtable, ncol = 3,
              widths = c(1, 1, 1))
 
-cat("Difference between the weights of varimax and oblimin rotation:\n")
+cat("Difference between the loadings of varimax and oblimin rotation:\n")
 diff_obli
 ```
 
@@ -887,7 +894,7 @@ p_diff <- pheatmap(diff_pearson,   color = coolwarm, breaks = breaks_full,
 grid.arrange(p_poly$gtable, p_pearson$gtable, p_diff$gtable, ncol = 3,
              widths = c(1, 1, 1))
 
-cat("Difference between the weights of Pearson and Polychoric:\n")
+cat("Difference between the loadings of Pearson and Polychoric:\n")
 print(round(diff_pearson, 5))
 ```
 
@@ -1031,3 +1038,103 @@ summary(as.vector(diff_item_mat))
 As we have said previously, the plot clearly indicates that Pearson
 correlation tends to systematically underestimate the true correlation
 between *questions* (not factor).
+
+# Take the Big 5 personality test
+
+You do not need to run all the code above to run this test. You only
+need to run the cells before the factor analysis part and the first cell
+from alternative B in order to take this test.
+
+For a more worked out tests you can go to the
+[psytests.org](https://psytests.org/big5/ineoBen.html) website for 120
+and 300 item questionnaires. It includes facets scores, which are
+essentially subfactors of the BIG 5 factors. For example the six facet
+of openness are active imagination (fantasy), aesthetic sensitivity,
+attentiveness to inner feelings, preference for variety
+(adventurousness), intellectual curiosity, and challenging authority
+(psychological liberalism).
+
+Run this chunk interactively in your R console to answer the 50 IPIP
+questions. Your Big 5 traits will be based on the previous EFA with
+oblique rotation (for more realism and better interpretability), minres
+method and polychoric correlation matrix.
+
+Rate each statement from 1 (Disagree) to 5 (Agree).
+
+```{r}
+#| eval: false
+questions <- c(
+  EXT1="I am the life of the party.", EXT2="I don't talk a lot.", 
+  EXT3="I feel comfortable around people.", EXT4="I keep in the background.", 
+  EXT5="I start conversations.", EXT6="I have little to say.", 
+  EXT7="I talk to a lot of different people at parties.", EXT8="I don't like to draw attention to myself.", 
+  EXT9="I don't mind being the center of attention.", EXT10="I am quiet around strangers.",
+  
+  EST1="I get stressed out easily.", EST2="I am relaxed most of the time.", 
+  EST3="I worry about things.", EST4="I seldom feel blue.", 
+  EST5="I am easily disturbed.", EST6="I get upset easily.", 
+  EST7="I change my mood a lot.", EST8="I have frequent mood swings.", 
+  EST9="I get irritated easily.", EST10="I often feel blue.",
+  
+  AGR1="I feel little concern for others.", AGR2="I am interested in people.", 
+  AGR3="I insult people.", AGR4="I sympathize with others' feelings.", 
+  AGR5="I am not interested in other people's problems.", AGR6="I have a soft heart.", 
+  AGR7="I am not really interested in others.", AGR8="I take time out for others.", 
+  AGR9="I feel others' emotions.", AGR10="I make people feel at ease.",
+  
+  CSN1="I am always prepared.", CSN2="I leave my belongings around.", 
+  CSN3="I pay attention to details.", CSN4="I make a mess of things.", 
+  CSN5="I get chores done right away.", CSN6="I often forget to put things back in their proper place.", 
+  CSN7="I like order.", CSN8="I shirk my duties.", 
+  CSN9="I follow a schedule.", CSN10="I am exacting in my work.",
+  
+  OPN1="I have a rich vocabulary.", OPN2="I have difficulty understanding abstract ideas.", 
+  OPN3="I have a vivid imagination.", OPN4="I am not interested in abstract ideas.", 
+  OPN5="I have excellent ideas.", OPN6="I do not have a good imagination.", 
+  OPN7="I am quick to understand things.", OPN8="I use difficult words.", 
+  OPN9="I spend time reflecting on things.", OPN10="I am full of ideas."
+)
+
+my_answers <- numeric(length(questions))
+names(my_answers) <- names(questions)
+
+questions_order <- c(sapply(1:10, function(x) seq(x, 50, by = 10))) #shuffle questions
+# Interactive prompt loop1
+for (i in questions_order) {
+  valid <- FALSE
+  while (!valid) {
+    ans <- readline(prompt = paste0(questions[i], " [1-5]: "))
+    ans_num <- as.numeric(ans)
+    
+    if (!is.na(ans_num) && ans_num >= 1 && ans_num <= 5 && ans_num %% 1 == 0) {
+      my_answers[i] <- ans_num
+      valid <- TRUE
+    } else {
+      cat("Invalid input. Please enter an integer between 1 and 5.\n")
+    }
+  }
+}
+
+my_answers <- my_answers[colnames(data_mat)]
+
+# Standardize and calculate factor scores
+pop_means <- colMeans(data_mat)
+pop_sds   <- apply(data_mat, 2, sd)
+my_answers_std <- (my_answers - pop_means) / pop_sds
+
+my_scores <- as.numeric(t(my_answers_std) %*% fa_obli$weights)
+my_scores <- my_scores[c(1, 2, 3, 5, 4)]
+names(my_scores) <- trait_names
+
+# Calculate percentiles based on the original distribution
+my_percentiles <- sapply(trait_names, function(t) {
+  ecdf(data_fa_obli[[t]])(my_scores[t])
+})
+
+results <- data.frame(
+  Factor_Score = round(my_scores, 3),
+  Percentile = paste0(round(my_percentiles * 100, 1), " %")
+)
+
+print(results)
+```
