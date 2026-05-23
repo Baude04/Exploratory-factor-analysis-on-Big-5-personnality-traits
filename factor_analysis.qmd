@@ -1,6 +1,10 @@
 ---
-title: "Factorial Analysis of IPIP Big Five Personality Data"
-format: html
+title: "Factor Analysis of IPIP Big Five Personality Data"
+format:
+  html:
+    footnotes-hover: true
+    code-fold: true
+    embed-resources: true
 execute:
   warning: false
   message: false
@@ -11,14 +15,14 @@ editor:
 
 ## The Five-Factor Model of Personality (Big Five)
 
-The Five-Factor Model (FFM), commonly referred to as the "Big Five" or
-the Five Factor Model (FFM) is the prevailing empirical taxonomy in
-contemporary personality psychology. Psychometric research have
-demonstrated that human personality traits can be comprehensively
-organized into five broad dimensions. Consequently, each individual can
-be mathematically represented as a single point within this
-5-dimensional continuous space, where their specific coordinates
-correspond to their standing on each respective trait.
+The Five-Factor Model (FFM), commonly referred to as the "Big Five" is
+the prevailing empirical taxonomy in contemporary personality
+psychology. Psychometric research have demonstrated that human
+personality traits can be comprehensively organized into five broad
+dimensions. Consequently, each individual can be mathematically
+represented as a single point within this 5-dimensional continuous
+space, where their specific coordinates correspond to their standing on
+each respective trait.
 
 These five latent constructs are:
 
@@ -131,6 +135,9 @@ options(digits = 5)
 
 # Data Cleaning
 
+The data file (around 400Mo) can be found on
+[Kaggle](https://www.kaggle.com/datasets/tunguz/big-five-personality-test).
+
 ```{r}
 data_raw <- read.csv("./IPIP-FFM-data-8Nov2018/data-final.csv", sep = "\t", na.strings = c("", " ", "NaN", "NA","NULL"))
 ```
@@ -189,7 +196,7 @@ interpretable.
 We could have used non-orthogonal rotation methods, like oblimin, which
 allow for correlated factors. It is commonly recommended to use oblique
 rotation in psychometric analysis, as said in [Fabrigar et
-al.](https://doi.org/10.1037/1082-989X.4.3.272):
+al.(1999)](https://doi.org/10.1037/1082-989X.4.3.272):
 
 > *For many constructs examined in psychology (e.g., mental abilities,
 > personality traits, attitudes), there is substantial theoretical and
@@ -202,7 +209,7 @@ However, our goal here is not to explain the correlations between
 factors, but to perform clustering on the factors, and we fear that
 oblique rotation will deform the space in a way that will influence the
 clustering. Additionally, [Costello and
-Osborne](https://doi.org/10.1037/1082-989X.4.3.272) suggest that
+Osborne(2005)](https://doi.org/10.7275/jyj1-4868) suggest that
 orthogonal and oblique rotation often produce similar results, so we
 will not lose much interpretability by using varimax rotation. The
 results given in alternative B of this notebook agree with this
@@ -223,9 +230,9 @@ distributed, contrary to the maximum likelihood (ML) method.
 Since the assumption that factors follow a Gaussian distribution
 directly contradicts the assumption of the Gaussian mixture model we
 will use later, we think it is preferable to use the ULS method instead
-of the ML method. However, this does not seem to bother Gerlach, M.,
-Farb, B., Revelle, W. et al.
-(<https://doi.org/10.1038/s41562-018-0419-z>), who use the ML method
+of the ML method. However, this does not seem to bother [Gerlach, M.,
+Farb, B., Revelle, W. et
+al.](https://doi.org/10.1038/s41562-018-0419-z), who use the ML method
 before using GMM. For the sake of comparison, we also perform factor
 analysis with the ML method in alternative A of this notebook, and the
 results are very similar to those given by the ULS method.
@@ -608,8 +615,6 @@ rotation method does not have a strong influence on the results.
 # scores="tenBerge" to preserve correlation
 fa_obli      <- fa(poly_mat, nfactors = 5, rotate = "oblimin", fm = "minres", n.obs = nrow(data_mat), scores="tenBerge")
 data_fa_obli <- as.data.frame(factor.scores(data_mat, fa_obli)$scores)
-# From our (not shown) observations, factors are ordered as follows:
-colnames(data_fa_obli) <- trait_names
 ```
 
 ```{r}
@@ -620,6 +625,9 @@ colnames(data_fa_obli) <- trait_names
 # Exchange column to properly match with traits
 data_fa_obli  <- data_fa_obli[, c(1, 2, 3, 5, 4)]
 fa_obli$loadings <- fa_obli$loadings[, c(1, 2, 3, 5, 4)]
+
+# From our (not shown) observations, factors are ordered as follows:
+colnames(data_fa_obli) <- trait_names
 
 loadings_obli  <- as.matrix(fa_obli$loadings)
 
@@ -643,9 +651,6 @@ p_diff <- pheatmap(diff_obli,   color = coolwarm, breaks = breaks_full,
 
 grid.arrange(p_obli$gtable, p_vari$gtable, p_diff$gtable, ncol = 3,
              widths = c(1, 1, 1))
-
-cat("Difference between the loadings of varimax and oblimin rotation:\n")
-diff_obli
 ```
 
 ## Correlation Between the Factors Obtained with the Oblimin Rotation
@@ -657,8 +662,8 @@ that the factors are still relatively independent from each other. This
 is consistent with the fact that the results given by the oblimin
 rotation are very similar to those given by the varimax rotation. We
 give here a comparison of the correlation matrix we found with the one
-given by Van der Linden et al. in their 2010 meta-analysis
-(<https://doi.org/10.1016/j.jrp.2010.03.003>).
+given by Van der Linden et al. in their [2010
+meta-analysis](https://doi.org/10.1016/j.jrp.2010.03.003).
 
 ```{r}
 #| fig-height: 4
@@ -847,11 +852,11 @@ package).
 ### Empirical evidence of the superiority of polychoric correlation matrix in EFA
 
 The methodological importance of this choice is highlighted by
-[Holgado–Tello et al](https://doi.org/10.1007/s11135-008-9190-y). The
-authors demonstrate that when data are ordinal, polychoric correlations
-provide a more accurate and stable reproduction of the original factor
-structure compared to Pearson correlations, which can lead to biased
-loadings and incorrect factor counts.
+[Holgado–Tello et al (2008)](https://doi.org/10.1007/s11135-008-9190-y).
+The authors demonstrate that when data are ordinal, polychoric
+correlations provide a more accurate and stable reproduction of the
+original factor structure compared to Pearson correlations, which can
+lead to biased loadings and incorrect factor counts.
 
 ```{r}
 #| warning: false
@@ -893,9 +898,6 @@ p_diff <- pheatmap(diff_pearson,   color = coolwarm, breaks = breaks_full,
 
 grid.arrange(p_poly$gtable, p_pearson$gtable, p_diff$gtable, ncol = 3,
              widths = c(1, 1, 1))
-
-cat("Difference between the loadings of Pearson and Polychoric:\n")
-print(round(diff_pearson, 5))
 ```
 
 ```{r}
@@ -1045,10 +1047,10 @@ You do not need to run all the code above to run this test. You only
 need to run the cells before the factor analysis part and the first cell
 from alternative B in order to take this test.
 
-For a more worked out tests you can go to the
+For more worked out tests you can go to the
 [psytests.org](https://psytests.org/big5/ineoBen.html) website for 120
 and 300 item questionnaires. It includes facets scores, which are
-essentially subfactors of the BIG 5 factors. For example the six facet
+essentially subfactors of the Big 5 factors. For example the six facet
 of openness are active imagination (fantasy), aesthetic sensitivity,
 attentiveness to inner feelings, preference for variety
 (adventurousness), intellectual curiosity, and challenging authority
